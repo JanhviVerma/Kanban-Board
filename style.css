@@ -1,8 +1,11 @@
 :root {
-    --primary-color: #FFD700;  /* Yellow */
-    --secondary-color: #333333;  /* Dark Grey */
-    --background-color: #F0F0F0;  /* Light Grey */
-    --text-color: #1A1A1A;  /* Almost Black */
+    --primary-color: #FFD700;
+    --secondary-color: #333333;
+    --background-color: #F0F0F0;
+    --text-color: #1A1A1A;
+    --success-color: #4CAF50;
+    --warning-color: #FFA500;
+    --danger-color: #F44336;
 }
 
 * {
@@ -36,6 +39,7 @@ h1 {
     display: flex;
     justify-content: center;
     gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .controls select, .controls button {
@@ -45,18 +49,26 @@ h1 {
     background-color: var(--primary-color);
     color: var(--secondary-color);
     cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.controls select:hover, .controls button:hover {
+    background-color: #FFC800;
 }
 
 #kanban-board {
     display: flex;
     justify-content: space-around;
     padding: 2rem;
+    flex-wrap: wrap;
 }
 
 .column {
     background-color: #FFFFFF;
     border-radius: 8px;
     width: 30%;
+    min-width: 300px;
+    margin-bottom: 2rem;
     padding: 1.5rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
@@ -97,6 +109,11 @@ h1 {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: move;
     position: relative;
+    transition: transform 0.3s ease;
+}
+
+.task:hover {
+    transform: translateY(-5px);
 }
 
 .task-actions {
@@ -114,6 +131,7 @@ h1 {
     margin-left: 0.5rem;
     cursor: pointer;
     color: var(--secondary-color);
+    transition: color 0.3s ease;
 }
 
 .task-actions i:hover {
@@ -130,14 +148,29 @@ h1 {
     margin-bottom: 0.5rem;
 }
 
-.task-priority.low { color: green; }
-.task-priority.medium { color: orange; }
-.task-priority.high { color: red; }
+.task-priority.low { color: var(--success-color); }
+.task-priority.medium { color: var(--warning-color); }
+.task-priority.high { color: var(--danger-color); }
 
 .task-due-date {
     font-size: 0.8rem;
     color: #666;
     margin-top: 0.5rem;
+}
+
+.task-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.task-tag {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.8rem;
 }
 
 .modal {
@@ -183,6 +216,7 @@ h1 {
     border-radius: 4px;
     cursor: pointer;
     margin-right: 0.5rem;
+    transition: background-color 0.3s ease;
 }
 
 .modal-content button:hover {
@@ -195,4 +229,16 @@ h1 {
 
 #analytics-content div {
     margin-bottom: 0.5rem;
+}
+
+#task-chart {
+    max-width: 100%;
+    height: auto;
+    margin-top: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+    .column {
+        width: 100%;
+    }
 }
