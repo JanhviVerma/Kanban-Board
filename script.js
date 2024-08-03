@@ -1,27 +1,67 @@
 document.addEventListener('DOMContentLoaded', () => {
     const addTaskButtons = document.querySelectorAll('.add-task');
+    const modal = document.getElementById('task-modal');
+    const saveTaskButton = document.getElementById('save-task');
+    const closeModalButton = document.getElementById('close-modal');
     let taskId = 0;
     
+    loadTasks();
+
     addTaskButtons.forEach(button => {
         button.addEventListener('click', () => {
-            const taskList = button.previousElementSibling;
-            const taskText = prompt('Enter task description:');
-            
-            if (taskText) {
-                const taskElement = createTaskElement(taskText);
-                taskList.appendChild(taskElement);
-            }
+            const column = button.closest('.column').id;
+            openModal(column);
         });
     });
 
-    function createTaskElement(taskText) {
+    saveTaskButton.addEventListener('click', saveTask);
+    closeModalButton.addEventListener('click', closeModal);
+
+    function openModal(column) {
+        modal.style.display = 'block';
+        modal.dataset.column = column;
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+        clearModalInputs();
+    }
+
+    function saveTask() {
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        const priority = document.getElementById('task-priority').value;
+        const dueDate = document.getElementById('task-due-date').value;
+        const column = modal.dataset.column;
+
+        if (title) {
+            const taskElement = createTaskElement(title, description, priority, dueDate);
+            const taskList = document.querySelector(`#${column} .task-list`);
+            taskList.appendChild(taskElement);
+            saveTasks();
+            closeModal();
+        }
+    }
+
+    function createTaskElement(title, description, priority, dueDate) {
         const taskElement = document.createElement('div');
         taskElement.classList.add('task');
         taskElement.setAttribute('draggable', 'true');
         taskElement.id = `task-${taskId++}`;
         
-        const taskContent = document.createElement('p');
-        taskContent.textContent = taskText;
+        const taskPriority = document.createElement('div');
+        taskPriority.classList.add('task-priority', priority);
+        taskPriority.textContent = `Priority: ${priority}`;
+        
+        const taskTitle = document.createElement('h3');
+        taskTitle.textContent = title;
+        
+        const taskDescription = document.createElement('p');
+        taskDescription.textContent = description;
+        
+        const taskDueDate = document.createElement('div');
+        taskDueDate.classList.add('task-due-date');
+        taskDueDate.textContent = `Due: ${dueDate || 'Not set'}`;
         
         const taskActions = document.createElement('div');
         taskActions.classList.add('task-actions');
@@ -37,7 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
         taskActions.appendChild(editIcon);
         taskActions.appendChild(deleteIcon);
         
-        taskElement.appendChild(taskContent);
+        taskElement.appendChild(taskPriority);
+        taskElement.appendChild(taskTitle);
+        taskElement.appendChild(taskDescription);
+        taskElement.appendChild(taskDueDate);
         taskElement.appendChild(taskActions);
 
         taskElement.addEventListener('dragstart', dragStart);
@@ -47,16 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function editTask(taskElement) {
-        const taskContent = taskElement.querySelector('p');
-        const newText = prompt('Edit task:', taskContent.textContent);
-        if (newText !== null) {
-            taskContent.textContent = newText;
-        }
+        // Implement edit functionality
     }
 
     function deleteTask(taskElement) {
         if (confirm('Are you sure you want to delete this task?')) {
             taskElement.remove();
+            saveTasks();
         }
     }
 
@@ -104,7 +144,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const draggable = document.getElementById(id);
 
         taskList.appendChild(draggable);
-
         draggable.style.opacity = '1';
+        saveTasks();
+    }
+
+    function saveTasks() {
+        const columns = ['todo', 'in-progress', 'done'];
+        const tasks = {};
+
+        columns.forEach(column => {
+            const taskList = document.querySelector(`#${column} .task-list`);
+            tasks[column] = Array.from(taskList.children).map(task => ({
+                id: task.id,
+                title: task.querySelector('h3').textContent,
+                description: task.querySelector('p').textContent,
+                priority: task.querySelector('.task-priority').classList[1],
+                dueDate: task.querySelector('.task-due-date').textContent.replace('Due: ', '')
+            }));
+        });
+
+        localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
+    }
+
+    function loadTasks() {
+        const savedTasks = JSON.parse(localStorage.getItem('kanbanTasks'));
+        if (savedTasks) {
+            Object.entries(savedTasks).forEach(([column, tasks]) => {
+                const taskList = document.querySelector(`#${column} .task-list`);
+                tasks.forEach(task => {
+                    const taskElement = createTaskElement(task.title, task.description, task.priority, task.dueDate);
+                    taskElement.id = task.id;
+                    taskList.appendChild(taskElement);
+                });
+            });
+            taskId = Math.max(...Object.values(savedTasks).flat().map(task => parseInt(task.id.split('-')[1]))) + 1;
+        }
+    }
+
+    function clearModalInputs() {
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-description').value = '';
+        document.getElementById('task-priority').value = 'low';
+        document.getElementById('task-due-date').value = '';
     }
 });

@@ -29,6 +29,21 @@
             <button class="add-task">+ Add Task</button>
         </div>
     </main>
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <h2>Task Details</h2>
+            <input type="text" id="task-title" placeholder="Task Title" required>
+            <textarea id="task-description" placeholder="Task Description"></textarea>
+            <select id="task-priority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+            <input type="date" id="task-due-date">
+            <button id="save-task">Save Task</button>
+            <button id="close-modal">Cancel</button>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
