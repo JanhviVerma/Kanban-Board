@@ -79,4 +79,31 @@ h1 {
     margin-bottom: 1rem;
     border-radius: 4px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: move;
+    position: relative;
+}
+
+.task-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: none;
+}
+
+.task:hover .task-actions {
+    display: block;
+}
+
+.task-actions i {
+    margin-left: 0.5rem;
+    cursor: pointer;
+    color: var(--secondary-color);
+}
+
+.task-actions i:hover {
+    color: var(--primary-color);
+}
+
+.drag-over {
+    border: 2px dashed var(--primary-color);
 }
