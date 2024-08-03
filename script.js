@@ -3,6 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('task-modal');
     const saveTaskButton = document.getElementById('save-task');
     const closeModalButton = document.getElementById('close-modal');
+    const filterPriority = document.getElementById('filter-priority');
+    const sortTasks = document.getElementById('sort-tasks');
+    const showAnalyticsButton = document.getElementById('show-analytics');
+    const analyticsModal = document.getElementById('analytics-modal');
+    const closeAnalyticsButton = document.getElementById('close-analytics');
     let taskId = 0;
     
     loadTasks();
@@ -16,6 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     saveTaskButton.addEventListener('click', saveTask);
     closeModalButton.addEventListener('click', closeModal);
+    filterPriority.addEventListener('change', applyFiltersAndSort);
+    sortTasks.addEventListener('change', applyFiltersAndSort);
+    showAnalyticsButton.addEventListener('click', showAnalytics);
+    closeAnalyticsButton.addEventListener('click', closeAnalytics);
 
     function openModal(column) {
         modal.style.display = 'block';
@@ -40,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             taskList.appendChild(taskElement);
             saveTasks();
             closeModal();
+            applyFiltersAndSort();
         }
     }
 
@@ -91,12 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function editTask(taskElement) {
         // Implement edit functionality
+        console.log('Edit task:', taskElement.id);
     }
 
     function deleteTask(taskElement) {
         if (confirm('Are you sure you want to delete this task?')) {
             taskElement.remove();
             saveTasks();
+            applyFiltersAndSort();
         }
     }
 
@@ -146,6 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         taskList.appendChild(draggable);
         draggable.style.opacity = '1';
         saveTasks();
+        applyFiltersAndSort();
     }
 
     function saveTasks() {
@@ -179,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             taskId = Math.max(...Object.values(savedTasks).flat().map(task => parseInt(task.id.split('-')[1]))) + 1;
         }
+        applyFiltersAndSort();
     }
 
     function clearModalInputs() {
@@ -186,5 +200,59 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('task-description').value = '';
         document.getElementById('task-priority').value = 'low';
         document.getElementById('task-due-date').value = '';
+    }
+
+    function applyFiltersAndSort() {
+        const priority = filterPriority.value;
+        const sortBy = sortTasks.value;
+        const tasks = document.querySelectorAll('.task');
+
+        tasks.forEach(task => {
+            const taskPriority = task.querySelector('.task-priority').classList[1];
+            task.style.display = (priority === 'all' || taskPriority === priority) ? 'block' : 'none';
+        });
+
+        const taskLists = document.querySelectorAll('.task-list');
+        taskLists.forEach(taskList => {
+            const tasksArray = Array.from(taskList.children);
+            tasksArray.sort((a, b) => {
+                if (sortBy === 'priority') {
+                    const priorityOrder = { high: 3, medium: 2, low: 1 };
+                    return priorityOrder[b.querySelector('.task-priority').classList[1]] - priorityOrder[a.querySelector('.task-priority').classList[1]];
+                } else {
+                    const dateA = new Date(a.querySelector('.task-due-date').textContent.replace('Due: ', ''));
+                    const dateB = new Date(b.querySelector('.task-due-date').textContent.replace('Due: ', ''));
+                    return dateA - dateB;
+                }
+            });
+            tasksArray.forEach(task => taskList.appendChild(task));
+        });
+    }
+
+    function showAnalytics() {
+        const tasks = document.querySelectorAll('.task');
+        const totalTasks = tasks.length;
+        const priorities = { low: 0, medium: 0, high: 0 };
+        const statuses = { todo: 0, 'in-progress': 0, done: 0 };
+
+        tasks.forEach(task => {
+            const priority = task.querySelector('.task-priority').classList[1];
+            const status = task.closest('.column').id;
+            priorities[priority]++;
+            statuses[status]++;
+        });
+
+        const analyticsContent = document.getElementById('analytics-content');
+        analyticsContent.innerHTML = `
+            <div>Total Tasks: ${totalTasks}</div>
+            <div>Priorities: Low (${priorities.low}), Medium (${priorities.medium}), High (${priorities.high})</div>
+            <div>Statuses: To Do (${statuses.todo}), In Progress (${statuses['in-progress']}), Done (${statuses.done})</div>
+        `;
+
+        analyticsModal.style.display = 'block';
+    }
+
+    function closeAnalytics() {
+        analyticsModal.style.display = 'none';
     }
 });

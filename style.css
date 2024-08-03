@@ -29,6 +29,22 @@ header {
 h1 {
     font-weight: 700;
     letter-spacing: 1px;
+    margin-bottom: 1rem;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.controls select, .controls button {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    cursor: pointer;
 }
 
 #kanban-board {
@@ -171,4 +187,12 @@ h1 {
 
 .modal-content button:hover {
     background-color: #FFC800;
+}
+
+#analytics-content {
+    margin-bottom: 1rem;
+}
+
+#analytics-content div {
+    margin-bottom: 0.5rem;
 }

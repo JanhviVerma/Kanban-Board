@@ -11,6 +11,19 @@
 <body>
     <header>
         <h1>Kanban Board</h1>
+        <div class="controls">
+            <select id="filter-priority">
+                <option value="all">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+            <select id="sort-tasks">
+                <option value="priority">Sort by Priority</option>
+                <option value="dueDate">Sort by Due Date</option>
+            </select>
+            <button id="show-analytics">Show Analytics</button>
+        </div>
     </header>
     <main id="kanban-board">
         <div class="column" id="todo">
@@ -42,6 +55,13 @@
             <input type="date" id="task-due-date">
             <button id="save-task">Save Task</button>
             <button id="close-modal">Cancel</button>
+        </div>
+    </div>
+    <div id="analytics-modal" class="modal">
+        <div class="modal-content">
+            <h2>Analytics Dashboard</h2>
+            <div id="analytics-content"></div>
+            <button id="close-analytics">Close</button>
         </div>
     </div>
     <script src="script.js"></script>
