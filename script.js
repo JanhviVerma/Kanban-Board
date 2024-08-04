@@ -529,35 +529,6 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFiltersAndSort();
     }
 
-    function saveTask() {
-        const title = document.getElementById('task-title').value;
-        const description = document.getElementById('task-description').value;
-        const priority = document.getElementById('task-priority').value;
-        const dueDate = document.getElementById('task-due-date').value;
-        const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
-        const attachment = document.getElementById('task-attachment').files[0];
-        const completion = document.getElementById('task-completion').value;
-        const category = document.getElementById('task-category').value;
-        const column = modal.dataset.column;
-        const subtasks = Array.from(document.getElementById('subtasks-list').children).map(li => li.textContent);
-        const comments = Array.from(document.getElementById('comments-list').children).map(li => li.textContent);
-    
-        if (title) {
-            const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category, subtasks, comments);
-            const taskList = document.querySelector(`#${column} .task-list`);
-            if (taskList) {
-                taskList.appendChild(taskElement);
-                saveTasks();
-                closeModal();
-                applyFiltersAndSort();
-            } else {
-                console.error('Could not find task list for column:', column);
-            }
-        } else {
-            alert('Please enter a task title.');
-        }
-    }
-
     function loadTasks() {
         const savedTasks = JSON.parse(localStorage.getItem('kanbanTasks'));
         if (savedTasks) {
