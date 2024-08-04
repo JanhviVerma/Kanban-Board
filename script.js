@@ -25,6 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const archivedTaskList = document.getElementById('archived-task-list');
 
     let archivedTasks = [];
+
+    let columns = ['todo', 'in-progress', 'done'];
+    let pomodoroInterval;
+    let pomodoroTime = 25 * 60; // 25 minutes
     
     loadTasks();    
 
@@ -55,6 +59,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showArchivedButton.addEventListener('click', showArchivedTasks);
         closeArchivedButton.addEventListener('click', closeArchivedTasks);
+
+        document.getElementById('create-column').addEventListener('click', createNewColumn);
+        document.getElementById('save-column').addEventListener('click', saveNewColumn);
+        document.getElementById('close-column-modal').addEventListener('click', closeColumnModal);
+        document.getElementById('toggle-timer').addEventListener('click', togglePomodoroTimer);
+        document.getElementById('start-timer').addEventListener('click', startPomodoroTimer);
+        document.getElementById('pause-timer').addEventListener('click', pausePomodoroTimer);
+        document.getElementById('reset-timer').addEventListener('click', resetPomodoroTimer);
+    }
+
+    function initializeBoard() {
+        const board = document.getElementById('kanban-board');
+        board.innerHTML = '';
+        columns.forEach(column => {
+            const columnElement = createColumnElement(column);
+            board.appendChild(columnElement);
+        });
+        initializeSortable();
+    }
+    
+    function createColumnElement(columnId) {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.id = columnId;
+        column.innerHTML = `
+            <div class="column-header">
+                <h2>${columnId.replace('-', ' ').toUpperCase()}</h2>
+                <i class="fas fa-trash delete-column"></i>
+            </div>
+            <div class="task-list"></div>
+            <button class="add-task">+ Add Task</button>
+        `;
+        column.querySelector('.delete-column').addEventListener('click', () => deleteColumn(columnId));
+        column.querySelector('.add-task').addEventListener('click', () => openModal(columnId));
+        return column;
+    }
+    
+    function deleteColumn(columnId) {
+        if (columns.length <= 1) {
+            alert("You can't delete the last column.");
+            return;
+        }
+        if (confirm(`Are you sure you want to delete the "${columnId}" column?`)) {
+            columns = columns.filter(col => col !== columnId);
+            saveTasks();
+            initializeBoard();
+        }
+    }
+    
+    function initializeSortable() {
+        const taskLists = document.querySelectorAll('.task-list');
+        taskLists.forEach(taskList => {
+            new Sortable(taskList, {
+                group: 'shared',
+                animation: 150,
+                ghostClass: 'ghost',
+                onEnd: saveTasks
+            });
+        });
+    }
+    
+    function createNewColumn() {
+        const columnModal = document.getElementById('column-modal');
+        columnModal.style.display = 'block';
+    }
+    
+    function saveNewColumn() {
+        const columnTitle = document.getElementById('column-title').value.trim();
+        if (columnTitle) {
+            const columnId = columnTitle.toLowerCase().replace(/\s+/g, '-');
+            if (!columns.includes(columnId)) {
+                columns.push(columnId);
+                initializeBoard();
+                closeColumnModal();
+            } else {
+                alert('A column with this name already exists.');
+            }
+        } else {
+            alert('Please enter a column title.');
+        }
+    }
+    
+    function closeColumnModal() {
+        document.getElementById('column-modal').style.display = 'none';
+        document.getElementById('column-title').value = '';
+    }
+    
+    function togglePomodoroTimer() {
+        const timer = document.getElementById('pomodoro-timer');
+        timer.classList.toggle('hidden');
+    }
+    
+    function startPomodoroTimer() {
+        clearInterval(pomodoroInterval);
+        pomodoroInterval = setInterval(() => {
+            pomodoroTime--;
+            updateTimerDisplay();
+            if (pomodoroTime <= 0) {
+                clearInterval(pomodoroInterval);
+                alert('Pomodoro session completed!');
+                resetPomodoroTimer();
+            }
+        }, 1000);
+    }
+    
+    function pausePomodoroTimer() {
+        clearInterval(pomodoroInterval);
+    }
+    
+    function resetPomodoroTimer() {
+        clearInterval(pomodoroInterval);
+        pomodoroTime = 25 * 60;
+        updateTimerDisplay();
+    }
+    
+    function updateTimerDisplay() {
+        const minutes = Math.floor(pomodoroTime / 60);
+        const seconds = pomodoroTime % 60;
+        document.getElementById('timer-display').textContent = 
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
 
     // Add these new functions and event listeners for mobile drag and drop
@@ -371,6 +495,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
         localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
         console.log('Tasks saved:', tasks);
+
+        localStorage.setItem('kanbanColumns', JSON.stringify(columns));
     }
 
     function editTask(taskElement) {
@@ -530,33 +656,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadTasks() {
+        // Modify existing loadTasks function to work with dynamic columns
         const savedTasks = JSON.parse(localStorage.getItem('kanbanTasks'));
+        const savedColumns = JSON.parse(localStorage.getItem('kanbanColumns'));
+        if (savedColumns) {
+            columns = savedColumns;
+        }
+        initializeBoard();
         if (savedTasks) {
             Object.entries(savedTasks).forEach(([column, tasks]) => {
                 const taskList = document.querySelector(`#${column} .task-list`);
-                tasks.forEach(task => {
-                    const taskElement = createTaskElement(
-                        task.title,
-                        task.description,
-                        task.priority,
-                        task.dueDate,
-                        task.tags,
-                        { name: task.attachment },
-                        task.completion,
-                        task.category,
-                        task.subtasks || [],
-                        task.comments || []
-                    );
-                    taskElement.id = task.id;
-                    taskList.appendChild(taskElement);
-                });
+                if (taskList) {
+                    tasks.forEach(task => {
+                        const taskElement = createTaskElement(
+                            task.title,
+                            task.description,
+                            task.priority,
+                            task.dueDate,
+                            task.tags,
+                            { name: task.attachment },
+                            task.completion,
+                            task.category,
+                            task.subtasks || [],
+                            task.comments || []
+                        );
+                        taskElement.id = task.id;
+                        taskList.appendChild(taskElement);
+                    });
+                }
             });
             taskId = Math.max(...Object.values(savedTasks).flat().map(task => parseInt(task.id.split('-')[1]))) + 1;
         }
         applyFiltersAndSort();
         initializeEventListeners();
+        loadDarkModePreference();
         loadArchivedTasks();
-        initializeEventListeners();
     }
 
     function clearModalInputs() {

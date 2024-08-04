@@ -434,3 +434,75 @@ h1 {
 .task-actions .archive-task {
     color: #FFA500;
 }
+
+/* Keep existing styles */
+
+/* New styles for V12 */
+#kanban-board {
+    display: flex;
+    overflow-x: auto;
+    padding: 2rem;
+    gap: 2rem;
+}
+
+.column {
+    flex: 0 0 300px;
+    max-width: 300px;
+}
+
+#pomodoro-timer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--primary-color);
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+#pomodoro-timer.hidden {
+    display: none;
+}
+
+#timer-display {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#pomodoro-timer button {
+    margin: 0 5px;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.column-header .fa-trash {
+    cursor: pointer;
+    color: var(--danger-color);
+}
+
+.task-list {
+    min-height: 100px;
+}
+
+.ghost {
+    opacity: 0.5;
+    background: #c8ebfb;
+}
+
+@media (max-width: 768px) {
+    #kanban-board {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .column {
+        width: 100%;
+        max-width: none;
+    }
+}
