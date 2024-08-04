@@ -19,17 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let taskId = 0;
     let draggedTask = null;
     let touchStartX, touchStartY;
-    
-    loadTasks();
+    const showArchivedButton = document.getElementById('show-archived');
+    const archivedTasksModal = document.getElementById('archived-tasks');
+    const closeArchivedButton = document.getElementById('close-archived');
+    const archivedTaskList = document.getElementById('archived-task-list');
 
-    addTaskButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const column = button.closest('.column').id;
-            openModal(column);
-        });
-    });
-
+    let archivedTasks = [];
     
+    loadTasks();    
 
     function initializeEventListeners() {
         addTaskButtons.forEach(button => {
@@ -55,6 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
         addCommentButton.addEventListener('click', addComment);
 
         initializeMobileDragAndDrop();
+
+        showArchivedButton.addEventListener('click', showArchivedTasks);
+        closeArchivedButton.addEventListener('click', closeArchivedTasks);
     }
 
     // Add these new functions and event listeners for mobile drag and drop
@@ -150,19 +150,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const column = modal.dataset.column;
         const subtasks = Array.from(document.getElementById('subtasks-list').children).map(li => li.textContent);
         const comments = Array.from(document.getElementById('comments-list').children).map(li => li.textContent);
-    
-        console.log('Saving task:', { title, description, priority, dueDate, tags, completion, category, column, subtasks, comments });
-    
+
         if (title) {
             const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category, subtasks, comments);
-            console.log('Created task element:', taskElement);
-    
             const taskList = document.querySelector(`#${column} .task-list`);
-            console.log('Task list element:', taskList);
-    
             if (taskList) {
                 taskList.appendChild(taskElement);
-                console.log('Task appended to list');
                 saveTasks();
                 closeModal();
                 applyFiltersAndSort();
@@ -170,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Could not find task list for column:', column);
             }
         } else {
-            console.error('Task title is required');
+            alert('Please enter a task title.');
         }
     }
 
@@ -179,6 +172,11 @@ document.addEventListener('DOMContentLoaded', () => {
         taskElement.classList.add('task');
         taskElement.setAttribute('draggable', 'true');
         taskElement.id = `task-${taskId++}`;
+        const archiveIcon = document.createElement('i');
+        archiveIcon.classList.add('fas', 'fa-archive', 'archive-task');
+        archiveIcon.addEventListener('click', () => archiveTask(taskElement));
+
+        taskActions.appendChild(archiveIcon);
         
         taskElement.innerHTML = `
             <div class="task-priority ${priority}">${priority}</div>
@@ -225,6 +223,93 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Created task element:', taskElement);
     
         return taskElement;
+    }
+
+    function archiveTask(taskElement) {
+        const taskData = {
+            id: taskElement.id,
+            title: taskElement.querySelector('h3').textContent,
+            description: taskElement.querySelector('p').textContent,
+            priority: taskElement.querySelector('.task-priority').classList[1],
+            dueDate: taskElement.querySelector('.task-due-date').textContent.replace('Due: ', ''),
+            tags: Array.from(taskElement.querySelectorAll('.task-tag')).map(tag => tag.textContent),
+            completion: taskElement.querySelector('.task-completion').textContent.replace('Completion: ', '').replace('%', ''),
+            category: taskElement.querySelector('.task-category').textContent.replace('Category: ', ''),
+            column: taskElement.closest('.column').id
+        };
+
+        archivedTasks.push(taskData);
+        taskElement.remove();
+        saveTasks();
+        saveArchivedTasks();
+    }
+
+    function showArchivedTasks() {
+        archivedTaskList.innerHTML = '';
+        archivedTasks.forEach(task => {
+            const archivedTaskElement = document.createElement('div');
+            archivedTaskElement.classList.add('archived-task');
+            archivedTaskElement.innerHTML = `
+                <div>
+                    <strong>${task.title}</strong> (${task.priority})
+                    <br>
+                    Due: ${task.dueDate}, Completion: ${task.completion}%
+                </div>
+                <button class="restore-task" data-id="${task.id}">Restore</button>
+            `;
+            archivedTaskList.appendChild(archivedTaskElement);
+        });
+
+        const restoreButtons = archivedTaskList.querySelectorAll('.restore-task');
+        restoreButtons.forEach(button => {
+            button.addEventListener('click', () => restoreTask(button.dataset.id));
+        });
+
+        archivedTasksModal.style.display = 'block';
+    }
+
+    function closeArchivedTasks() {
+        archivedTasksModal.style.display = 'none';
+    }
+
+    function restoreTask(taskId) {
+        const taskIndex = archivedTasks.findIndex(task => task.id === taskId);
+        if (taskIndex !== -1) {
+            const task = archivedTasks[taskIndex];
+            const taskElement = createTaskElement(
+                task.title,
+                task.description,
+                task.priority,
+                task.dueDate,
+                task.tags,
+                null,
+                task.completion,
+                task.category,
+                [],
+                []
+            );
+            taskElement.id = task.id;
+
+            const column = document.getElementById(task.column);
+            const taskList = column.querySelector('.task-list');
+            taskList.appendChild(taskElement);
+
+            archivedTasks.splice(taskIndex, 1);
+            saveTasks();
+            saveArchivedTasks();
+            showArchivedTasks(); // Refresh the archived tasks list
+        }
+    }
+
+    function saveArchivedTasks() {
+        localStorage.setItem('archivedTasks', JSON.stringify(archivedTasks));
+    }
+
+    function loadArchivedTasks() {
+        const savedArchivedTasks = JSON.parse(localStorage.getItem('archivedTasks'));
+        if (savedArchivedTasks) {
+            archivedTasks = savedArchivedTasks;
+        }
     }
 
     function clearModalInputs() {
@@ -499,6 +584,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         applyFiltersAndSort();
         initializeEventListeners();
+        loadArchivedTasks();
+        initializeEventListeners();
     }
 
     function clearModalInputs() {
@@ -762,5 +849,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    initializeEventListeners();
+    loadTasks();
 });
 

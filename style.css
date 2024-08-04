@@ -393,3 +393,44 @@ h1 {
     font-size: 1.2em;
     margin-left: 15px;
 }
+
+/* Previous styles remain the same */
+
+/* Add these new styles for archived tasks */
+#archived-tasks .modal-content {
+    width: 80%;
+    max-width: 800px;
+}
+
+#archived-task-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.archived-task {
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.archived-task button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.archived-task button:hover {
+    background-color: #357ae8;
+}
+
+/* Add this to your existing .task-actions styles */
+.task-actions .archive-task {
+    color: #FFA500;
+}
