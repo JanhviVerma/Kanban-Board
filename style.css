@@ -300,3 +300,42 @@ h1 {
     height: auto;
     margin-top: 1rem;
 }
+
+/* Mobile drag and drop styles */
+@media (max-width: 768px) {
+    .task.dragging {
+        opacity: 0.5;
+    }
+    
+    .column.drag-over {
+        background-color: rgba(74, 144, 226, 0.1);
+    }
+}
+
+/* Subtasks styles */
+#subtasks-container, #comments-container {
+    margin-top: 1rem;
+}
+
+#subtasks-list, #comments-list {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#subtasks-list li, #comments-list li {
+    margin-bottom: 0.5rem;
+}
+
+#new-subtask, #new-comment {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+/* Due date reminder styles */
+.task.due-soon {
+    border: 2px solid var(--warning-color);
+}
+
+.task.overdue {
+    border: 2px solid var(--danger-color);
+}

@@ -27,6 +27,18 @@
             <button id="show-analytics">Show Analytics</button>
             <button id="export-tasks">Export Tasks</button>
             <button id="import-tasks">Import Tasks</button>
+            <select id="filter-category">
+                <option value="all">All Categories</option>
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="education">Education</option>
+                <option value="other">Other</option>
+            </select>
+            <select id="filter-completion">
+                <option value="all">All Completion</option>
+                <option value="incomplete">Incomplete</option>
+                <option value="complete">Complete</option>
+            </select>
         </div>
     </header>
     <main id="kanban-board">
@@ -68,6 +80,18 @@
             </select>
             <button id="save-task">Save Task</button>
             <button id="close-modal">Cancel</button>
+            <div id="subtasks-container">
+                <h3>Subtasks</h3>
+                <ul id="subtasks-list"></ul>
+                <input type="text" id="new-subtask" placeholder="New subtask">
+                <button id="add-subtask">Add Subtask</button>
+            </div>
+            <div id="comments-container">
+                <h3>Comments</h3>
+                <ul id="comments-list"></ul>
+                <textarea id="new-comment" placeholder="Add a comment"></textarea>
+                <button id="add-comment">Add Comment</button>
+            </div>
         </div>
     </div>
     <div id="analytics-modal" class="modal">

@@ -6,12 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterPriority = document.getElementById('filter-priority');
     const sortTasks = document.getElementById('sort-tasks');
     const searchTasks = document.getElementById('search-tasks');
+    const filterCategory = document.getElementById('filter-category');
+    const filterCompletion = document.getElementById('filter-completion');
     const showAnalyticsButton = document.getElementById('show-analytics');
     const analyticsModal = document.getElementById('analytics-modal');
     const closeAnalyticsButton = document.getElementById('close-analytics');
     const exportTasksButton = document.getElementById('export-tasks');
     const importTasksButton = document.getElementById('import-tasks');
     const importFile = document.getElementById('import-file');
+    const addSubtaskButton = document.getElementById('add-subtask');
+    const addCommentButton = document.getElementById('add-comment');
     let taskId = 0;
     
     loadTasks();
@@ -28,11 +32,17 @@ document.addEventListener('DOMContentLoaded', () => {
     filterPriority.addEventListener('change', applyFiltersAndSort);
     sortTasks.addEventListener('change', applyFiltersAndSort);
     searchTasks.addEventListener('input', applyFiltersAndSort);
+    filterCategory.addEventListener('change', applyFiltersAndSort);
+    filterCompletion.addEventListener('change', applyFiltersAndSort);
     showAnalyticsButton.addEventListener('click', showAnalytics);
     closeAnalyticsButton.addEventListener('click', closeAnalytics);
     exportTasksButton.addEventListener('click', exportTasks);
     importTasksButton.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', importTasks);
+    addSubtaskButton.addEventListener('click', addSubtask);
+    addCommentButton.addEventListener('click', addComment);
+    // Add this line to check due dates periodically
+    setInterval(checkDueDates, 60000); // Check every minute
 
     function openModal(column) {
         modal.style.display = 'block';
@@ -40,13 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeModal() {
-        const modal = document.getElementById('task-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            clearModalInputs();
-        } else {
-            console.error('Modal element not found');
-        }
+        modal.style.display = 'none';
+        clearModalInputs();
     }
 
     function saveTask() {
@@ -59,65 +64,57 @@ document.addEventListener('DOMContentLoaded', () => {
         const completion = document.getElementById('task-completion').value;
         const category = document.getElementById('task-category').value;
         const column = modal.dataset.column;
+        const subtasks = Array.from(document.getElementById('subtasks-list').children).map(li => li.textContent);
+        const comments = Array.from(document.getElementById('comments-list').children).map(li => li.textContent);
+    
+        console.log('Saving task:', { title, description, priority, dueDate, tags, completion, category, column, subtasks, comments });
     
         if (title) {
-            const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category);
+            const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category, subtasks, comments);
+            console.log('Created task element:', taskElement);
+    
             const taskList = document.querySelector(`#${column} .task-list`);
-            taskList.appendChild(taskElement);
-            saveTasks();
-            closeModal();
-            applyFiltersAndSort();
+            console.log('Task list element:', taskList);
+    
+            if (taskList) {
+                taskList.appendChild(taskElement);
+                console.log('Task appended to list');
+                saveTasks();
+                closeModal();
+                applyFiltersAndSort();
+            } else {
+                console.error('Could not find task list for column:', column);
+            }
         } else {
-            alert('Please enter a task title.');
+            console.error('Task title is required');
         }
     }
 
-    function createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category) {
+    function createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category, subtasks, comments) {
         const taskElement = document.createElement('div');
-        taskElement.classList.add('task', `${priority}-priority`);
+        taskElement.classList.add('task');
         taskElement.setAttribute('draggable', 'true');
         taskElement.id = `task-${taskId++}`;
         
-        const taskPriority = document.createElement('div');
-        taskPriority.classList.add('task-priority', priority);
-        taskPriority.textContent = `Priority: ${priority}`;
-        
-        const taskTitle = document.createElement('h3');
-        taskTitle.textContent = title;
-        
-        const taskDescription = document.createElement('p');
-        taskDescription.textContent = description;
-        
-        const taskDueDate = document.createElement('div');
-        taskDueDate.classList.add('task-due-date');
-        taskDueDate.textContent = `Due: ${dueDate || 'Not set'}`;
-        
-        const taskTags = document.createElement('div');
-        taskTags.classList.add('task-tags');
-        tags.forEach(tag => {
-            const tagElement = document.createElement('span');
-            tagElement.classList.add('task-tag');
-            tagElement.textContent = tag;
-            taskTags.appendChild(tagElement);
-        });
-        
-        const taskAttachment = document.createElement('div');
-        taskAttachment.classList.add('task-attachment');
-        if (attachment) {
-            taskAttachment.textContent = `Attachment: ${attachment.name}`;
-        }
-        
-        const taskCompletion = document.createElement('div');
-        taskCompletion.classList.add('task-completion');
-        const taskCompletionBar = document.createElement('div');
-        taskCompletionBar.classList.add('task-completion-bar');
-        taskCompletionBar.style.width = `${completion}%`;
-        taskCompletion.appendChild(taskCompletionBar);
-        
-        const taskCategory = document.createElement('div');
-        taskCategory.classList.add('task-category');
-        taskCategory.textContent = `Category: ${category}`;
-        
+        taskElement.innerHTML = `
+            <div class="task-priority ${priority}">${priority}</div>
+            <h3>${title}</h3>
+            <p>${description}</p>
+            <div class="task-due-date">Due: ${dueDate || 'Not set'}</div>
+            <div class="task-completion">Completion: ${completion}%</div>
+            <div class="task-category">Category: ${category}</div>
+            <div class="task-tags">${tags.map(tag => `<span class="task-tag">${tag}</span>`).join('')}</div>
+            ${attachment ? `<div class="task-attachment">Attachment: ${attachment.name}</div>` : ''}
+            <div class="task-subtasks">
+                <h4>Subtasks:</h4>
+                <ul>${subtasks.map(subtask => `<li>${subtask}</li>`).join('')}</ul>
+            </div>
+            <div class="task-comments">
+                <h4>Comments:</h4>
+                <ul>${comments.map(comment => `<li>${comment}</li>`).join('')}</ul>
+            </div>
+        `;
+    
         const taskActions = document.createElement('div');
         taskActions.classList.add('task-actions');
         
@@ -129,28 +126,78 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteIcon.classList.add('fas', 'fa-trash-alt');
         deleteIcon.addEventListener('click', () => deleteTask(taskElement));
         
-        const archiveIcon = document.createElement('i');
-        archiveIcon.classList.add('fas', 'fa-archive');
-        archiveIcon.addEventListener('click', () => archiveTask(taskElement));
-        
         taskActions.appendChild(editIcon);
         taskActions.appendChild(deleteIcon);
-        taskActions.appendChild(archiveIcon);
         
-        taskElement.appendChild(taskPriority);
-        taskElement.appendChild(taskTitle);
-        taskElement.appendChild(taskDescription);
-        taskElement.appendChild(taskDueDate);
-        taskElement.appendChild(taskTags);
-        taskElement.appendChild(taskAttachment);
-        taskElement.appendChild(taskCompletion);
-        taskElement.appendChild(taskCategory);
         taskElement.appendChild(taskActions);
     
         taskElement.addEventListener('dragstart', dragStart);
         taskElement.addEventListener('dragend', dragEnd);
     
+        console.log('Created task element:', taskElement);
+    
         return taskElement;
+    }
+
+    function clearModalInputs() {
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-description').value = '';
+        document.getElementById('task-priority').value = 'low';
+        document.getElementById('task-due-date').value = '';
+        document.getElementById('task-tags').value = '';
+        document.getElementById('task-attachment').value = '';
+        document.getElementById('task-completion').value = '';
+        document.getElementById('task-category').value = 'work';
+        document.getElementById('subtasks-list').innerHTML = '';
+        document.getElementById('comments-list').innerHTML = '';
+        document.getElementById('new-subtask').value = '';
+        document.getElementById('new-comment').value = '';
+    }
+
+    function addSubtask() {
+        const newSubtaskInput = document.getElementById('new-subtask');
+        const subtasksList = document.getElementById('subtasks-list');
+        if (newSubtaskInput.value.trim()) {
+            const li = document.createElement('li');
+            li.textContent = newSubtaskInput.value.trim();
+            subtasksList.appendChild(li);
+            newSubtaskInput.value = '';
+        }
+    }
+
+    function addComment() {
+        const newCommentInput = document.getElementById('new-comment');
+        const commentsList = document.getElementById('comments-list');
+        if (newCommentInput.value.trim()) {
+            const li = document.createElement('li');
+            li.textContent = newCommentInput.value.trim();
+            commentsList.appendChild(li);
+            newCommentInput.value = '';
+        }
+    }
+
+    function saveTasks() {
+        const columns = ['todo', 'in-progress', 'done'];
+        const tasks = {};
+    
+        columns.forEach(column => {
+            const taskList = document.querySelector(`#${column} .task-list`);
+            tasks[column] = Array.from(taskList.children).map(task => ({
+                id: task.id,
+                title: task.querySelector('h3').textContent,
+                description: task.querySelector('p').textContent,
+                priority: task.querySelector('.task-priority').classList[1],
+                dueDate: task.querySelector('.task-due-date').textContent.replace('Due: ', ''),
+                completion: task.querySelector('.task-completion').textContent.replace('Completion: ', '').replace('%', ''),
+                category: task.querySelector('.task-category').textContent.replace('Category: ', ''),
+                tags: Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent),
+                subtasks: Array.from(task.querySelectorAll('.task-subtasks li')).map(li => li.textContent),
+                comments: Array.from(task.querySelectorAll('.task-comments li')).map(li => li.textContent),
+            }));
+        });
+    
+        localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
+        console.log('Tasks saved:', tasks);
     }
 
     function editTask(taskElement) {
@@ -309,26 +356,33 @@ document.addEventListener('DOMContentLoaded', () => {
         applyFiltersAndSort();
     }
 
-    function saveTasks() {
-        const columns = ['todo', 'in-progress', 'done'];
-        const tasks = {};
+    function saveTask() {
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        const priority = document.getElementById('task-priority').value;
+        const dueDate = document.getElementById('task-due-date').value;
+        const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
+        const attachment = document.getElementById('task-attachment').files[0];
+        const completion = document.getElementById('task-completion').value;
+        const category = document.getElementById('task-category').value;
+        const column = modal.dataset.column;
+        const subtasks = Array.from(document.getElementById('subtasks-list').children).map(li => li.textContent);
+        const comments = Array.from(document.getElementById('comments-list').children).map(li => li.textContent);
     
-        columns.forEach(column => {
+        if (title) {
+            const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category, subtasks, comments);
             const taskList = document.querySelector(`#${column} .task-list`);
-            tasks[column] = Array.from(taskList.children).map(task => ({
-                id: task.id,
-                title: task.querySelector('h3').textContent,
-                description: task.querySelector('p').textContent,
-                priority: task.querySelector('.task-priority').classList[1],
-                dueDate: task.querySelector('.task-due-date').textContent.replace('Due: ', ''),
-                tags: Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent),
-                attachment: task.querySelector('.task-attachment').textContent.replace('Attachment: ', ''),
-                completion: parseInt(task.querySelector('.task-completion-bar').style.width),
-                category: task.querySelector('.task-category').textContent.split(': ')[1]
-            }));
-        });
-    
-        localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
+            if (taskList) {
+                taskList.appendChild(taskElement);
+                saveTasks();
+                closeModal();
+                applyFiltersAndSort();
+            } else {
+                console.error('Could not find task list for column:', column);
+            }
+        } else {
+            alert('Please enter a task title.');
+        }
     }
 
     function loadTasks() {
@@ -345,7 +399,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         task.tags,
                         { name: task.attachment },
                         task.completion,
-                        task.category
+                        task.category,
+                        task.subtasks || [],
+                        task.comments || []
                     );
                     taskElement.id = task.id;
                     taskList.appendChild(taskElement);
@@ -369,25 +425,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const priority = filterPriority.value;
         const sortBy = sortTasks.value;
         const searchQuery = searchTasks.value.toLowerCase();
+        const category = document.getElementById('filter-category').value;
+        const completion = document.getElementById('filter-completion').value;
         const tasks = document.querySelectorAll('.task');
-
+    
         tasks.forEach(task => {
             const taskPriority = task.querySelector('.task-priority').classList[1];
             const taskTitle = task.querySelector('h3').textContent.toLowerCase();
             const taskDescription = task.querySelector('p').textContent.toLowerCase();
             const taskTags = Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent.toLowerCase());
-
+            const taskCategory = task.querySelector('.task-category').textContent.split(': ')[1];
+            const taskCompletionElement = task.querySelector('.task-completion');
+            const taskCompletion = taskCompletionElement ? parseInt(taskCompletionElement.textContent.split(': ')[1]) : 0;
+    
             const priorityMatch = priority === 'all' || taskPriority === priority;
+            const categoryMatch = category === 'all' || taskCategory === category;
+            const completionMatch = completion === 'all' || 
+                                    (completion === 'incomplete' && taskCompletion < 100) ||
+                                    (completion === 'complete' && taskCompletion === 100);
             const searchMatch = taskTitle.includes(searchQuery) || 
                                 taskDescription.includes(searchQuery) || 
                                 taskTags.some(tag => tag.includes(searchQuery));
-
-            task.style.display = (priorityMatch && searchMatch) ? 'block' : 'none';
+    
+            task.style.display = (priorityMatch && categoryMatch && completionMatch && searchMatch) ? 'block' : 'none';
         });
-
+    
         const taskLists = document.querySelectorAll('.task-list');
         taskLists.forEach(taskList => {
-            const tasksArray = Array.from(taskList.children);
+            const tasksArray = Array.from(taskList.children).filter(task => task.style.display !== 'none');
             tasksArray.sort((a, b) => {
                 if (sortBy === 'priority') {
                     const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -534,3 +599,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 });
+
+// Add these at the end of your file
+let draggedTask = null;
+
+function touchStart(e) {
+    draggedTask = e.target.closest('.task');
+    e.target.closest('.task').style.opacity = '0.5';
+}
+
+function touchMove(e) {
+    e.preventDefault();
+    const touch = e.targetTouches[0];
+    const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
+    if (column) {
+        column.classList.add('drag-over');
+    }
+}
+
+function touchEnd(e) {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
+    if (column) {
+        column.classList.remove('drag-over');
+        const taskList = column.querySelector('.task-list');
+        taskList.appendChild(draggedTask);
+        draggedTask.style.opacity = '1';
+        saveTasks();
+        applyFiltersAndSort();
+    }
+    draggedTask = null;
+}
+
+function addSubtask() {
+    const subtaskInput = document.getElementById('new-subtask');
+    const subtaskText = subtaskInput.value.trim();
+    if (subtaskText) {
+        const subtasksList = document.getElementById('subtasks-list');
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <input type="checkbox">
+            <span>${subtaskText}</span>
+            <button class="delete-subtask">Delete</button>
+        `;
+        subtasksList.appendChild(li);
+        subtaskInput.value = '';
+    }
+}
+
+function addComment() {
+    const commentInput = document.getElementById('new-comment');
+    const commentText = commentInput.value.trim();
+    if (commentText) {
+        const commentsList = document.getElementById('comments-list');
+        const li = document.createElement('li');
+        li.textContent = commentText;
+        commentsList.appendChild(li);
+        commentInput.value = '';
+    }
+}
+
+function checkDueDates() {
+    const tasks = document.querySelectorAll('.task');
+    const today = new Date();
+    tasks.forEach(task => {
+        const dueDateElement = task.querySelector('.task-due-date');
+        const dueDate = new Date(dueDateElement.textContent.replace('Due: ', ''));
+        const timeDiff = dueDate.getTime() - today.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        task.classList.remove('due-soon', 'overdue');
+        if (daysDiff <= 3 && daysDiff > 0) {
+            task.classList.add('due-soon');
+        } else if (daysDiff <= 0) {
+            task.classList.add('overdue');
+        }
+    });
+}
