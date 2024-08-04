@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const addSubtaskButton = document.getElementById('add-subtask');
     const addCommentButton = document.getElementById('add-comment');
     let taskId = 0;
+    let draggedTask = null;
+    let touchStartX, touchStartY;
     
     loadTasks();
 
@@ -27,22 +29,104 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    saveTaskButton.addEventListener('click', saveTask);
-    closeModalButton.addEventListener('click', closeModal);
-    filterPriority.addEventListener('change', applyFiltersAndSort);
-    sortTasks.addEventListener('change', applyFiltersAndSort);
-    searchTasks.addEventListener('input', applyFiltersAndSort);
-    filterCategory.addEventListener('change', applyFiltersAndSort);
-    filterCompletion.addEventListener('change', applyFiltersAndSort);
-    showAnalyticsButton.addEventListener('click', showAnalytics);
-    closeAnalyticsButton.addEventListener('click', closeAnalytics);
-    exportTasksButton.addEventListener('click', exportTasks);
-    importTasksButton.addEventListener('click', () => importFile.click());
-    importFile.addEventListener('change', importTasks);
-    addSubtaskButton.addEventListener('click', addSubtask);
-    addCommentButton.addEventListener('click', addComment);
-    // Add this line to check due dates periodically
-    setInterval(checkDueDates, 60000); // Check every minute
+    
+
+    function initializeEventListeners() {
+        addTaskButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const column = button.closest('.column').id;
+                openModal(column);
+            });
+        });
+
+        saveTaskButton.addEventListener('click', saveTask);
+        closeModalButton.addEventListener('click', closeModal);
+        filterPriority.addEventListener('change', applyFiltersAndSort);
+        sortTasks.addEventListener('change', applyFiltersAndSort);
+        searchTasks.addEventListener('input', applyFiltersAndSort);
+        filterCategory.addEventListener('change', applyFiltersAndSort);
+        filterCompletion.addEventListener('change', applyFiltersAndSort);
+        showAnalyticsButton.addEventListener('click', showAnalytics);
+        closeAnalyticsButton.addEventListener('click', closeAnalytics);
+        exportTasksButton.addEventListener('click', exportTasks);
+        importTasksButton.addEventListener('click', () => importFile.click());
+        importFile.addEventListener('change', importTasks);
+        addSubtaskButton.addEventListener('click', addSubtask);
+        addCommentButton.addEventListener('click', addComment);
+
+        initializeMobileDragAndDrop();
+    }
+
+    // Add these new functions and event listeners for mobile drag and drop
+    
+
+    function initializeMobileDragAndDrop() {
+        const tasks = document.querySelectorAll('.task');
+        const columns = document.querySelectorAll('.column');
+
+        tasks.forEach(task => {
+            task.addEventListener('touchstart', touchStart, { passive: false });
+            task.addEventListener('touchmove', touchMove, { passive: false });
+            task.addEventListener('touchend', touchEnd);
+        });
+
+        columns.forEach(column => {
+            column.addEventListener('touchmove', columnTouchMove, { passive: false });
+        });
+    }
+
+    function touchStart(e) {
+        draggedTask = e.target.closest('.task');
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+
+        setTimeout(() => {
+            draggedTask.classList.add('dragging');
+        }, 100);
+    }
+
+    function touchMove(e) {
+        if (!draggedTask) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        const moveX = touch.clientX - touchStartX;
+        const moveY = touch.clientY - touchStartY;
+
+        draggedTask.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    }
+
+    function columnTouchMove(e) {
+        if (!draggedTask) return;
+        e.preventDefault();
+
+        const touch = e.touches[0];
+        const column = document.elementFromPoint(touch.clientX, touch.clientY).closest('.column');
+
+        if (column) {
+            const taskList = column.querySelector('.task-list');
+            const rect = taskList.getBoundingClientRect();
+            const middleY = rect.top + rect.height / 2;
+
+            if (touch.clientY < middleY) {
+                taskList.insertBefore(draggedTask, taskList.firstChild);
+            } else {
+                taskList.appendChild(draggedTask);
+            }
+        }
+    }
+
+    function touchEnd() {
+        if (!draggedTask) return;
+
+        draggedTask.classList.remove('dragging');
+        draggedTask.style.transform = '';
+        draggedTask = null;
+
+        saveTasks();
+        applyFiltersAndSort();
+    }
 
     function openModal(column) {
         modal.style.display = 'block';
@@ -133,6 +217,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
         taskElement.addEventListener('dragstart', dragStart);
         taskElement.addEventListener('dragend', dragEnd);
+        taskElement.addEventListener('touchstart', touchStart, { passive: false });
+        taskElement.addEventListener('touchmove', touchMove, { passive: false });
+        taskElement.addEventListener('touchend', touchEnd);
+
     
         console.log('Created task element:', taskElement);
     
@@ -410,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
             taskId = Math.max(...Object.values(savedTasks).flat().map(task => parseInt(task.id.split('-')[1]))) + 1;
         }
         applyFiltersAndSort();
+        initializeEventListeners();
     }
 
     function clearModalInputs() {
@@ -598,82 +687,80 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsText(file);
         }
     }
+
+    function touchStart(e) {
+        draggedTask = e.target.closest('.task');
+        e.target.closest('.task').style.opacity = '0.5';
+    }
+
+    function touchMove(e) {
+        e.preventDefault();
+        const touch = e.targetTouches[0];
+        const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
+        if (column) {
+            column.classList.add('drag-over');
+        }
+    }
+
+    function touchEnd(e) {
+        e.preventDefault();
+        const touch = e.changedTouches[0];
+        const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
+        if (column) {
+            column.classList.remove('drag-over');
+            const taskList = column.querySelector('.task-list');
+            taskList.appendChild(draggedTask);
+            draggedTask.style.opacity = '1';
+            saveTasks();
+            applyFiltersAndSort();
+        }
+        draggedTask = null;
+    }
+
+    function addSubtask() {
+        const subtaskInput = document.getElementById('new-subtask');
+        const subtaskText = subtaskInput.value.trim();
+        if (subtaskText) {
+            const subtasksList = document.getElementById('subtasks-list');
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <input type="checkbox">
+                <span>${subtaskText}</span>
+                <button class="delete-subtask">Delete</button>
+            `;
+            subtasksList.appendChild(li);
+            subtaskInput.value = '';
+        }
+    }
+
+    function addComment() {
+        const commentInput = document.getElementById('new-comment');
+        const commentText = commentInput.value.trim();
+        if (commentText) {
+            const commentsList = document.getElementById('comments-list');
+            const li = document.createElement('li');
+            li.textContent = commentText;
+            commentsList.appendChild(li);
+            commentInput.value = '';
+        }
+    }
+
+    function checkDueDates() {
+        const tasks = document.querySelectorAll('.task');
+        const today = new Date();
+        tasks.forEach(task => {
+            const dueDateElement = task.querySelector('.task-due-date');
+            const dueDate = new Date(dueDateElement.textContent.replace('Due: ', ''));
+            const timeDiff = dueDate.getTime() - today.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            
+            task.classList.remove('due-soon', 'overdue');
+            if (daysDiff <= 3 && daysDiff > 0) {
+                task.classList.add('due-soon');
+            } else if (daysDiff <= 0) {
+                task.classList.add('overdue');
+            }
+        });
+    }
 });
 
-// Add these at the end of your file
-let draggedTask = null;
-
-function touchStart(e) {
-    draggedTask = e.target.closest('.task');
-    e.target.closest('.task').style.opacity = '0.5';
-}
-
-function touchMove(e) {
-    e.preventDefault();
-    const touch = e.targetTouches[0];
-    const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
-    if (column) {
-        column.classList.add('drag-over');
-    }
-}
-
-function touchEnd(e) {
-    e.preventDefault();
-    const touch = e.changedTouches[0];
-    const column = document.elementFromPoint(touch.pageX, touch.pageY).closest('.column');
-    if (column) {
-        column.classList.remove('drag-over');
-        const taskList = column.querySelector('.task-list');
-        taskList.appendChild(draggedTask);
-        draggedTask.style.opacity = '1';
-        saveTasks();
-        applyFiltersAndSort();
-    }
-    draggedTask = null;
-}
-
-function addSubtask() {
-    const subtaskInput = document.getElementById('new-subtask');
-    const subtaskText = subtaskInput.value.trim();
-    if (subtaskText) {
-        const subtasksList = document.getElementById('subtasks-list');
-        const li = document.createElement('li');
-        li.innerHTML = `
-            <input type="checkbox">
-            <span>${subtaskText}</span>
-            <button class="delete-subtask">Delete</button>
-        `;
-        subtasksList.appendChild(li);
-        subtaskInput.value = '';
-    }
-}
-
-function addComment() {
-    const commentInput = document.getElementById('new-comment');
-    const commentText = commentInput.value.trim();
-    if (commentText) {
-        const commentsList = document.getElementById('comments-list');
-        const li = document.createElement('li');
-        li.textContent = commentText;
-        commentsList.appendChild(li);
-        commentInput.value = '';
-    }
-}
-
-function checkDueDates() {
-    const tasks = document.querySelectorAll('.task');
-    const today = new Date();
-    tasks.forEach(task => {
-        const dueDateElement = task.querySelector('.task-due-date');
-        const dueDate = new Date(dueDateElement.textContent.replace('Due: ', ''));
-        const timeDiff = dueDate.getTime() - today.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        
-        task.classList.remove('due-soon', 'overdue');
-        if (daysDiff <= 3 && daysDiff > 0) {
-            task.classList.add('due-soon');
-        } else if (daysDiff <= 0) {
-            task.classList.add('overdue');
-        }
-    });
-}

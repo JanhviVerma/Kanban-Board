@@ -339,3 +339,57 @@ h1 {
 .task.overdue {
     border: 2px solid var(--danger-color);
 }
+
+/* ... (previous styles remain the same) ... */
+
+/* Add these new styles for mobile drag and drop */
+@media (max-width: 768px) {
+    .task.dragging {
+        opacity: 0.5;
+        position: absolute;
+        z-index: 1000;
+        pointer-events: none;
+    }
+
+    .column.drag-over {
+        background-color: rgba(74, 144, 226, 0.1);
+    }
+
+    .task-list {
+        min-height: 100px;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .controls > * {
+        margin-bottom: 10px;
+    }
+
+    #kanban-board {
+        flex-direction: column;
+    }
+
+    .column {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+/* Improve touch targets for mobile */
+.task, .add-task, .task-actions i {
+    padding: 15px;
+}
+
+.task-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+}
+
+.task-actions i {
+    font-size: 1.2em;
+    margin-left: 15px;
+}
