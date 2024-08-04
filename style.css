@@ -1,7 +1,7 @@
 :root {
-    --primary-color: #FFD700;
+    --primary-color: #4a90e2;
     --secondary-color: #333333;
-    --background-color: #F0F0F0;
+    --background-color: #f4f7f9;
     --text-color: #1A1A1A;
     --success-color: #4CAF50;
     --warning-color: #FFA500;
@@ -22,8 +22,8 @@ body {
 }
 
 header {
-    background-color: var(--secondary-color);
-    color: var(--primary-color);
+    background-color: var(--primary-color);
+    color: white;
     text-align: center;
     padding: 1.5rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -42,18 +42,18 @@ h1 {
     flex-wrap: wrap;
 }
 
-.controls select, .controls button {
+.controls select, .controls button, .controls input[type="text"] {
     padding: 0.5rem;
     border: none;
     border-radius: 4px;
-    background-color: var(--primary-color);
+    background-color: white;
     color: var(--secondary-color);
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
 .controls select:hover, .controls button:hover {
-    background-color: #FFC800;
+    background-color: #e6e6e6;
 }
 
 #kanban-board {
@@ -88,7 +88,7 @@ h1 {
     width: 100%;
     padding: 0.75rem;
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -97,11 +97,11 @@ h1 {
 }
 
 .add-task:hover {
-    background-color: #FFC800;
+    background-color: #357ae8;
 }
 
 .task {
-    background-color: var(--background-color);
+    background-color: #FFFFFF;
     border-left: 5px solid var(--primary-color);
     padding: 1rem;
     margin-bottom: 1rem;
@@ -167,10 +167,16 @@ h1 {
 
 .task-tag {
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: white;
     padding: 0.2rem 0.5rem;
     border-radius: 10px;
     font-size: 0.8rem;
+}
+
+.task-attachment {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    margin-top: 0.5rem;
 }
 
 .modal {
@@ -211,7 +217,7 @@ h1 {
 .modal-content button {
     padding: 0.5rem 1rem;
     background-color: var(--primary-color);
-    color: var(--secondary-color);
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -220,7 +226,7 @@ h1 {
 }
 
 .modal-content button:hover {
-    background-color: #FFC800;
+    background-color: #357ae8;
 }
 
 #analytics-content {
@@ -231,7 +237,7 @@ h1 {
     margin-bottom: 0.5rem;
 }
 
-#task-chart {
+#task-chart, #priority-chart {
     max-width: 100%;
     height: auto;
     margin-top: 1rem;

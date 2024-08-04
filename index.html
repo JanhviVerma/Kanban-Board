@@ -23,8 +23,10 @@
                 <option value="dueDate">Sort by Due Date</option>
                 <option value="title">Sort by Title</option>
             </select>
+            <input type="text" id="search-tasks" placeholder="Search tasks...">
             <button id="show-analytics">Show Analytics</button>
             <button id="export-tasks">Export Tasks</button>
+            <button id="import-tasks">Import Tasks</button>
         </div>
     </header>
     <main id="kanban-board">
@@ -56,6 +58,7 @@
             </select>
             <input type="date" id="task-due-date">
             <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
+            <input type="file" id="task-attachment" accept=".pdf,.doc,.docx,.txt">
             <button id="save-task">Save Task</button>
             <button id="close-modal">Cancel</button>
         </div>
@@ -65,9 +68,11 @@
             <h2>Analytics Dashboard</h2>
             <div id="analytics-content"></div>
             <canvas id="task-chart"></canvas>
+            <canvas id="priority-chart"></canvas>
             <button id="close-analytics">Close</button>
         </div>
     </div>
+    <input type="file" id="import-file" accept=".json" style="display: none;">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>

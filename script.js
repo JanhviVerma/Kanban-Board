@@ -5,10 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModalButton = document.getElementById('close-modal');
     const filterPriority = document.getElementById('filter-priority');
     const sortTasks = document.getElementById('sort-tasks');
+    const searchTasks = document.getElementById('search-tasks');
     const showAnalyticsButton = document.getElementById('show-analytics');
     const analyticsModal = document.getElementById('analytics-modal');
     const closeAnalyticsButton = document.getElementById('close-analytics');
     const exportTasksButton = document.getElementById('export-tasks');
+    const importTasksButton = document.getElementById('import-tasks');
+    const importFile = document.getElementById('import-file');
     let taskId = 0;
     
     loadTasks();
@@ -24,9 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModalButton.addEventListener('click', closeModal);
     filterPriority.addEventListener('change', applyFiltersAndSort);
     sortTasks.addEventListener('change', applyFiltersAndSort);
+    searchTasks.addEventListener('input', applyFiltersAndSort);
     showAnalyticsButton.addEventListener('click', showAnalytics);
     closeAnalyticsButton.addEventListener('click', closeAnalytics);
     exportTasksButton.addEventListener('click', exportTasks);
+    importTasksButton.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', importTasks);
 
     function openModal(column) {
         modal.style.display = 'block';
@@ -34,8 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function closeModal() {
-        modal.style.display = 'none';
-        clearModalInputs();
+        const modal = document.getElementById('task-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            clearModalInputs();
+        } else {
+            console.error('Modal element not found');
+        }
     }
 
     function saveTask() {
@@ -44,19 +55,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const priority = document.getElementById('task-priority').value;
         const dueDate = document.getElementById('task-due-date').value;
         const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
+        const attachment = document.getElementById('task-attachment').files[0];
         const column = modal.dataset.column;
-
+    
         if (title) {
-            const taskElement = createTaskElement(title, description, priority, dueDate, tags);
-            const taskList = document.querySelector(`#${column} .task-list`);
-            taskList.appendChild(taskElement);
-            saveTasks();
+            try {
+                const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment);
+                const taskList = document.querySelector(`#${column} .task-list`);
+                taskList.appendChild(taskElement);
+                saveTasks();
+                applyFiltersAndSort();
+            } catch (error) {
+                console.error('Error saving task:', error);
+            }
             closeModal();
-            applyFiltersAndSort();
+        } else {
+            alert('Please enter a task title.');
         }
     }
 
-    function createTaskElement(title, description, priority, dueDate, tags) {
+    function createTaskElement(title, description, priority, dueDate, tags, attachment) {
         const taskElement = document.createElement('div');
         taskElement.classList.add('task');
         taskElement.setAttribute('draggable', 'true');
@@ -85,6 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
             taskTags.appendChild(tagElement);
         });
         
+        const taskAttachment = document.createElement('div');
+        taskAttachment.classList.add('task-attachment');
+        if (attachment) {
+            taskAttachment.textContent = `Attachment: ${attachment.name}`;
+        }
+        
         const taskActions = document.createElement('div');
         taskActions.classList.add('task-actions');
         
@@ -99,11 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
         taskActions.appendChild(editIcon);
         taskActions.appendChild(deleteIcon);
         
-        taskElement.appendChild(taskPriority);
-        taskElement.appendChild(taskTitle);
-        taskElement.appendChild(taskDescription);
         taskElement.appendChild(taskDueDate);
         taskElement.appendChild(taskTags);
+        taskElement.appendChild(taskAttachment);
         taskElement.appendChild(taskActions);
 
         taskElement.addEventListener('dragstart', dragStart);
@@ -138,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const priority = document.getElementById('task-priority').value;
         const dueDate = document.getElementById('task-due-date').value;
         const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
+        const attachment = document.getElementById('task-attachment').files[0];
 
         taskElement.querySelector('h3').textContent = title;
         taskElement.querySelector('p').textContent = description;
@@ -153,6 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
             tagElement.textContent = tag;
             taskTags.appendChild(tagElement);
         });
+
+        const taskAttachment = taskElement.querySelector('.task-attachment');
+        if (attachment) {
+            taskAttachment.textContent = `Attachment: ${attachment.name}`;
+        } else {
+            taskAttachment.textContent = '';
+        }
 
         closeModal();
         saveTasks();
@@ -228,7 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 description: task.querySelector('p').textContent,
                 priority: task.querySelector('.task-priority').classList[1],
                 dueDate: task.querySelector('.task-due-date').textContent.replace('Due: ', ''),
-                tags: Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent)
+                tags: Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent),
+                attachment: task.querySelector('.task-attachment').textContent.replace('Attachment: ', '')
             }));
         });
 
@@ -241,7 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.entries(savedTasks).forEach(([column, tasks]) => {
                 const taskList = document.querySelector(`#${column} .task-list`);
                 tasks.forEach(task => {
-                    const taskElement = createTaskElement(task.title, task.description, task.priority, task.dueDate, task.tags);
+                    const taskElement = createTaskElement(task.title, task.description, task.priority, task.dueDate, task.tags, { name: task.attachment });
                     taskElement.id = task.id;
                     taskList.appendChild(taskElement);
                 });
@@ -257,16 +288,27 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('task-priority').value = 'low';
         document.getElementById('task-due-date').value = '';
         document.getElementById('task-tags').value = '';
+        document.getElementById('task-attachment').value = '';
     }
 
     function applyFiltersAndSort() {
         const priority = filterPriority.value;
         const sortBy = sortTasks.value;
+        const searchQuery = searchTasks.value.toLowerCase();
         const tasks = document.querySelectorAll('.task');
 
         tasks.forEach(task => {
             const taskPriority = task.querySelector('.task-priority').classList[1];
-            task.style.display = (priority === 'all' || taskPriority === priority) ? 'block' : 'none';
+            const taskTitle = task.querySelector('h3').textContent.toLowerCase();
+            const taskDescription = task.querySelector('p').textContent.toLowerCase();
+            const taskTags = Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent.toLowerCase());
+
+            const priorityMatch = priority === 'all' || taskPriority === priority;
+            const searchMatch = taskTitle.includes(searchQuery) || 
+                                taskDescription.includes(searchQuery) || 
+                                taskTags.some(tag => tag.includes(searchQuery));
+
+            task.style.display = (priorityMatch && searchMatch) ? 'block' : 'none';
         });
 
         const taskLists = document.querySelectorAll('.task-list');
@@ -316,15 +358,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <div>Top Tags: ${Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([tag, count]) => `${tag} (${count})`).join(', ')}</div>
         `;
 
-        const ctx = document.getElementById('task-chart').getContext('2d');
-        new Chart(ctx, {
+        const taskCtx = document.getElementById('task-chart').getContext('2d');
+        new Chart(taskCtx, {
             type: 'bar',
             data: {
                 labels: ['To Do', 'In Progress', 'Done'],
                 datasets: [{
                     label: 'Tasks by Status',
                     data: [statuses.todo, statuses['in-progress'], statuses.done],
-                    backgroundColor: ['#FFD700', '#FFA500', '#4CAF50']
+                    backgroundColor: ['#4a90e2', '#f39c12', '#2ecc71']
                 }]
             },
             options: {
@@ -337,6 +379,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        const priorityCtx = document.getElementById('priority-chart').getContext('2d');
+        new Chart(priorityCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Low', 'Medium', 'High'],
+                datasets: [{
+                    data: [priorities.low, priorities.medium, priorities.high],
+                    backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c']
+                }]
+            }
+        });
+
         analyticsModal.style.display = 'block';
     }
 
@@ -346,20 +400,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function exportTasks() {
         const tasks = JSON.parse(localStorage.getItem('kanbanTasks'));
-        const csvContent = "data:text/csv;charset=utf-8," 
-            + "Title,Description,Priority,Due Date,Status,Tags\n"
-            + Object.entries(tasks).flatMap(([status, taskList]) => 
-                taskList.map(task => 
-                    `"${task.title}","${task.description}",${task.priority},${task.dueDate},${status},"${task.tags.join(', ')}"`
-                )
-            ).join("\n");
+        const jsonString = JSON.stringify(tasks, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'kanban_tasks.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "kanban_tasks.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    function importTasks(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const tasks = JSON.parse(e.target.result);
+                    localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
+                    location.reload();
+                } catch (error) {
+                    alert('Error importing tasks. Please make sure the file is a valid JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
     }
 });
