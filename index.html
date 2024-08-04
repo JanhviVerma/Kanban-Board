@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanban Board Pro</title>
+    <title>Kanban Board Pro V7</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
 </head>
 <body>
     <header>
-        <h1>Kanban Board Pro</h1>
+        <h1>Kanban Board Pro V7</h1>
         <div class="controls">
             <select id="filter-priority">
                 <option value="all">All Priorities</option>
@@ -59,6 +59,13 @@
             <input type="date" id="task-due-date">
             <input type="text" id="task-tags" placeholder="Tags (comma-separated)">
             <input type="file" id="task-attachment" accept=".pdf,.doc,.docx,.txt">
+            <input type="number" id="task-completion" min="0" max="100" placeholder="Completion %" required>
+            <select id="task-category">
+                <option value="work">Work</option>
+                <option value="personal">Personal</option>
+                <option value="education">Education</option>
+                <option value="other">Other</option>
+            </select>
             <button id="save-task">Save Task</button>
             <button id="close-modal">Cancel</button>
         </div>
@@ -69,6 +76,7 @@
             <div id="analytics-content"></div>
             <canvas id="task-chart"></canvas>
             <canvas id="priority-chart"></canvas>
+            <canvas id="category-chart"></canvas>
             <button id="close-analytics">Close</button>
         </div>
     </div>

@@ -1,8 +1,8 @@
 :root {
-    --primary-color: #4a90e2;
-    --secondary-color: #333333;
-    --background-color: #f4f7f9;
-    --text-color: #1A1A1A;
+    --primary-color: #FFD700;  /* Yellow */
+    --secondary-color: #333333;  /* Dark Grey */
+    --background-color: #F0F0F0;  /* Light Grey */
+    --text-color: #1A1A1A;  /* Almost Black */
     --success-color: #4CAF50;
     --warning-color: #FFA500;
     --danger-color: #F44336;
@@ -247,4 +247,56 @@ h1 {
     .column {
         width: 100%;
     }
+}
+
+/* Add these new styles to your existing CSS file */
+
+.task {
+    /* ... existing styles ... */
+    border-left-width: 5px;
+    transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.task.low-priority { border-color: var(--success-color); }
+.task.medium-priority { border-color: var(--warning-color); }
+.task.high-priority { border-color: var(--danger-color); }
+
+.task-completion {
+    width: 100%;
+    height: 5px;
+    background-color: #e0e0e0;
+    margin-top: 10px;
+}
+
+.task-completion-bar {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.task-category {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+.archived-tasks {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Style updates for the modals */
+.modal-content input[type="number"],
+.modal-content select#task-category {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#category-chart {
+    max-width: 100%;
+    height: auto;
+    margin-top: 1rem;
 }

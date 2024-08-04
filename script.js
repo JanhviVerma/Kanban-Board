@@ -56,27 +56,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const dueDate = document.getElementById('task-due-date').value;
         const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
         const attachment = document.getElementById('task-attachment').files[0];
+        const completion = document.getElementById('task-completion').value;
+        const category = document.getElementById('task-category').value;
         const column = modal.dataset.column;
     
         if (title) {
-            try {
-                const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment);
-                const taskList = document.querySelector(`#${column} .task-list`);
-                taskList.appendChild(taskElement);
-                saveTasks();
-                applyFiltersAndSort();
-            } catch (error) {
-                console.error('Error saving task:', error);
-            }
+            const taskElement = createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category);
+            const taskList = document.querySelector(`#${column} .task-list`);
+            taskList.appendChild(taskElement);
+            saveTasks();
             closeModal();
+            applyFiltersAndSort();
         } else {
             alert('Please enter a task title.');
         }
     }
 
-    function createTaskElement(title, description, priority, dueDate, tags, attachment) {
+    function createTaskElement(title, description, priority, dueDate, tags, attachment, completion, category) {
         const taskElement = document.createElement('div');
-        taskElement.classList.add('task');
+        taskElement.classList.add('task', `${priority}-priority`);
         taskElement.setAttribute('draggable', 'true');
         taskElement.id = `task-${taskId++}`;
         
@@ -109,6 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
             taskAttachment.textContent = `Attachment: ${attachment.name}`;
         }
         
+        const taskCompletion = document.createElement('div');
+        taskCompletion.classList.add('task-completion');
+        const taskCompletionBar = document.createElement('div');
+        taskCompletionBar.classList.add('task-completion-bar');
+        taskCompletionBar.style.width = `${completion}%`;
+        taskCompletion.appendChild(taskCompletionBar);
+        
+        const taskCategory = document.createElement('div');
+        taskCategory.classList.add('task-category');
+        taskCategory.textContent = `Category: ${category}`;
+        
         const taskActions = document.createElement('div');
         taskActions.classList.add('task-actions');
         
@@ -120,38 +129,92 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteIcon.classList.add('fas', 'fa-trash-alt');
         deleteIcon.addEventListener('click', () => deleteTask(taskElement));
         
+        const archiveIcon = document.createElement('i');
+        archiveIcon.classList.add('fas', 'fa-archive');
+        archiveIcon.addEventListener('click', () => archiveTask(taskElement));
+        
         taskActions.appendChild(editIcon);
         taskActions.appendChild(deleteIcon);
+        taskActions.appendChild(archiveIcon);
         
+        taskElement.appendChild(taskPriority);
+        taskElement.appendChild(taskTitle);
+        taskElement.appendChild(taskDescription);
         taskElement.appendChild(taskDueDate);
         taskElement.appendChild(taskTags);
         taskElement.appendChild(taskAttachment);
+        taskElement.appendChild(taskCompletion);
+        taskElement.appendChild(taskCategory);
         taskElement.appendChild(taskActions);
-
+    
         taskElement.addEventListener('dragstart', dragStart);
         taskElement.addEventListener('dragend', dragEnd);
-
+    
         return taskElement;
     }
 
     function editTask(taskElement) {
         const title = taskElement.querySelector('h3').textContent;
         const description = taskElement.querySelector('p').textContent;
-        const priority = taskElement.querySelector('.task-priority').classList[1];
+        const priority = taskElement.classList[1].replace('-priority', '');
         const dueDate = taskElement.querySelector('.task-due-date').textContent.replace('Due: ', '');
         const tags = Array.from(taskElement.querySelectorAll('.task-tag')).map(tag => tag.textContent).join(', ');
-
+        const completion = parseInt(taskElement.querySelector('.task-completion-bar').style.width);
+        const category = taskElement.querySelector('.task-category').textContent.replace('Category: ', '');
+    
         document.getElementById('task-title').value = title;
         document.getElementById('task-description').value = description;
         document.getElementById('task-priority').value = priority;
         document.getElementById('task-due-date').value = dueDate !== 'Not set' ? dueDate : '';
         document.getElementById('task-tags').value = tags;
-
+        document.getElementById('task-completion').value = completion;
+        document.getElementById('task-category').value = category;
+    
         openModal(taskElement.closest('.column').id);
         saveTaskButton.onclick = function() {
             updateTask(taskElement);
             saveTaskButton.onclick = saveTask;
         };
+    }
+    
+    function updateTask(taskElement) {
+        const title = document.getElementById('task-title').value;
+        const description = document.getElementById('task-description').value;
+        const priority = document.getElementById('task-priority').value;
+        const dueDate = document.getElementById('task-due-date').value;
+        const tags = document.getElementById('task-tags').value.split(',').map(tag => tag.trim());
+        const completion = document.getElementById('task-completion').value;
+        const category = document.getElementById('task-category').value;
+        const attachment = document.getElementById('task-attachment').files[0];
+    
+        taskElement.className = `task ${priority}-priority`;
+        taskElement.querySelector('h3').textContent = title;
+        taskElement.querySelector('p').textContent = description;
+        taskElement.querySelector('.task-priority').textContent = `Priority: ${priority}`;
+        taskElement.querySelector('.task-due-date').textContent = `Due: ${dueDate || 'Not set'}`;
+    
+        const taskTags = taskElement.querySelector('.task-tags');
+        taskTags.innerHTML = '';
+        tags.forEach(tag => {
+            const tagElement = document.createElement('span');
+            tagElement.classList.add('task-tag');
+            tagElement.textContent = tag;
+            taskTags.appendChild(tagElement);
+        });
+    
+        const taskAttachment = taskElement.querySelector('.task-attachment');
+        if (attachment) {
+            taskAttachment.textContent = `Attachment: ${attachment.name}`;
+        } else {
+            taskAttachment.textContent = '';
+        }
+    
+        taskElement.querySelector('.task-completion-bar').style.width = `${completion}%`;
+        taskElement.querySelector('.task-category').textContent = `Category: ${category}`;
+    
+        closeModal();
+        saveTasks();
+        applyFiltersAndSort();
     }
 
     function updateTask(taskElement) {
@@ -249,7 +312,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function saveTasks() {
         const columns = ['todo', 'in-progress', 'done'];
         const tasks = {};
-
+    
         columns.forEach(column => {
             const taskList = document.querySelector(`#${column} .task-list`);
             tasks[column] = Array.from(taskList.children).map(task => ({
@@ -259,10 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 priority: task.querySelector('.task-priority').classList[1],
                 dueDate: task.querySelector('.task-due-date').textContent.replace('Due: ', ''),
                 tags: Array.from(task.querySelectorAll('.task-tag')).map(tag => tag.textContent),
-                attachment: task.querySelector('.task-attachment').textContent.replace('Attachment: ', '')
+                attachment: task.querySelector('.task-attachment').textContent.replace('Attachment: ', ''),
+                completion: parseInt(task.querySelector('.task-completion-bar').style.width),
+                category: task.querySelector('.task-category').textContent.split(': ')[1]
             }));
         });
-
+    
         localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
     }
 
@@ -272,7 +337,16 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.entries(savedTasks).forEach(([column, tasks]) => {
                 const taskList = document.querySelector(`#${column} .task-list`);
                 tasks.forEach(task => {
-                    const taskElement = createTaskElement(task.title, task.description, task.priority, task.dueDate, task.tags, { name: task.attachment });
+                    const taskElement = createTaskElement(
+                        task.title,
+                        task.description,
+                        task.priority,
+                        task.dueDate,
+                        task.tags,
+                        { name: task.attachment },
+                        task.completion,
+                        task.category
+                    );
                     taskElement.id = task.id;
                     taskList.appendChild(taskElement);
                 });
@@ -336,6 +410,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const priorities = { low: 0, medium: 0, high: 0 };
         const statuses = { todo: 0, 'in-progress': 0, done: 0 };
         const tags = {};
+        const categories = { work: 0, personal: 0, education: 0, other: 0 };
+        const completionRate = { total: 0, count: 0 };
 
         tasks.forEach(task => {
             const priority = task.querySelector('.task-priority').classList[1];
@@ -348,7 +424,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tagText = tag.textContent;
                 tags[tagText] = (tags[tagText] || 0) + 1;
             });
+
+            const category = task.querySelector('.task-category').textContent.split(': ')[1];
+            categories[category]++;
+            
+            const completion = parseInt(task.querySelector('.task-completion-bar').style.width);
+            completionRate.total += completion;
+            completionRate.count++;
         });
+
+        const avgCompletionRate = completionRate.count > 0 ? (completionRate.total / completionRate.count).toFixed(2) : 0;
+    
+        analyticsContent.innerHTML += `
+            <div>Categories: Work (${categories.work}), Personal (${categories.personal}), Education (${categories.education}), Other (${categories.other})</div>
+            <div>Average Completion Rate: ${avgCompletionRate}%</div>
+        `;
 
         const analyticsContent = document.getElementById('analytics-content');
         analyticsContent.innerHTML = `
@@ -387,6 +477,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 datasets: [{
                     data: [priorities.low, priorities.medium, priorities.high],
                     backgroundColor: ['#2ecc71', '#f39c12', '#e74c3c']
+                }]
+            }
+        });
+
+        analyticsModal.style.display = 'block';
+
+        const categoryCtx = document.getElementById('category-chart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Work', 'Personal', 'Education', 'Other'],
+                datasets: [{
+                    data: [categories.work, categories.personal, categories.education, categories.other],
+                    backgroundColor: ['#4a90e2', '#f39c12', '#2ecc71', '#e74c3c']
                 }]
             }
         });
